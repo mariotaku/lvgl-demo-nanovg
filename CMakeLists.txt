@@ -23,7 +23,7 @@ target_compile_definitions(nanovg PUBLIC FONS_USE_FREETYPE NVG_NO_STB)
 
 target_link_libraries(lvgl PUBLIC nanovg)
 
-add_executable(demo src/main.c src/nvg_driver.c src/nvg_backend.c src/lv_sdl_drv_pointer_input.c)
+add_executable(demo src/main.c src/lv_nvg_disp_drv.c src/nvg_backend.c src/lv_sdl_drv_pointer_input.c)
 target_include_directories(demo PRIVATE nanovg/example)
 target_compile_definitions(demo PRIVATE NANOVG_USE_GLEW)
 target_link_libraries(demo PRIVATE lvgl lv_demos nanovg ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES}

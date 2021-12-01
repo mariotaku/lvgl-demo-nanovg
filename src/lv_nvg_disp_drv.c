@@ -2,7 +2,7 @@
 // Created by Mariotaku on 2021/11/30.
 //
 
-#include "nvg_driver.h"
+#include "lv_nvg_disp_drv.h"
 
 #include <nanovg.h>
 #include <src/draw/nvg/lv_draw_nvg_priv.h>
@@ -20,6 +20,11 @@ void lv_nvg_disp_drv_init(lv_disp_drv_t *driver, lv_draw_nvg_context_t *drv_ctx)
     driver->user_data = drv_ctx;
 }
 
+void lv_nvg_disp_drv_deinit(lv_disp_drv_t *driver) {
+    lv_mem_free(driver->draw_buf->buf1);
+    lv_mem_free(driver->draw_buf);
+}
+
 static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p) {
     LV_UNUSED(color_p);
     lv_draw_nvg_context_t *ctx = (lv_draw_nvg_context_t *) disp_drv->user_data;
@@ -31,10 +36,10 @@ static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t 
     }
 
     // Set render target to window buffer
-    ctx->callbacks.set_render_buffer(ctx, LV_DRAW_NVG_BUFFER_SCREEN, false);
+    ctx->callbacks.set_render_buffer(ctx, LV_DRAW_NVG_BUFFER_SCREEN, true);
 
     nvgBeginFrame(ctx->nvg, lv_area_get_width(area), lv_area_get_height(area), 1);
-    ctx->callbacks.fill_buffer(ctx, LV_DRAW_NVG_BUFFER_FRAME, NULL, true);
+    ctx->callbacks.fill_buffer(ctx, LV_DRAW_NVG_BUFFER_FRAME, NULL);
 
     nvgEndFrame(ctx->nvg);
 
