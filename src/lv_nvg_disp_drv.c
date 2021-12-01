@@ -6,9 +6,11 @@
 
 #include <nanovg.h>
 #include <src/draw/nvg/lv_draw_nvg_priv.h>
-
+#include <stdio.h>
 
 static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p);
+
+static void monitor_cb(lv_disp_drv_t *drv, uint32_t time, uint32_t px);
 
 void lv_nvg_disp_drv_init(lv_disp_drv_t *driver, lv_draw_nvg_context_t *drv_ctx) {
     lv_disp_drv_init(driver);
@@ -17,6 +19,7 @@ void lv_nvg_disp_drv_init(lv_disp_drv_t *driver, lv_draw_nvg_context_t *drv_ctx)
     driver->direct_mode = true;
     driver->draw_buf = draw_buf;
     driver->flush_cb = flush_cb;
+    driver->monitor_cb = monitor_cb;
     driver->user_data = drv_ctx;
 }
 
@@ -47,4 +50,8 @@ static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t 
     ctx->callbacks.swap_window(ctx);
 
     lv_disp_flush_ready(disp_drv);
+}
+
+static void monitor_cb(lv_disp_drv_t *drv, uint32_t time, uint32_t px) {
+    fprintf(stderr, "Flush used %d ms\n", time);
 }

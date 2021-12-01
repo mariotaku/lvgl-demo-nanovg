@@ -20,7 +20,9 @@
 #include <SDL.h>
 
 #if NANOVG_GLES2
+
 #include <GLES2/gl2.h>
+
 #else
 
 #include <GL/glew.h>
@@ -66,8 +68,7 @@ static NVGcontext *create_nvg();
 static void nvg_sdl_userdata_init(nvg_sdl_userdata *userdata, SDL_Window *window, NVGcontext *nvg);
 
 int main(int argc, char **argv) {
-    int flags = SDL_INIT_EVERYTHING & ~(SDL_INIT_TIMER | SDL_INIT_HAPTIC);
-    if (SDL_Init(flags) < 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS) < 0) {
         printf("ERROR: SDL_Init failed: %s", SDL_GetError());
         return EXIT_FAILURE;
     }
@@ -123,9 +124,9 @@ int main(int argc, char **argv) {
 
     lv_indev_t *indev_pointer = lv_sdl_init_pointer();
 
-    lv_demo_widgets();
+//    lv_demo_widgets();
 //    lv_demo_music();
-//    lv_demo_benchmark();
+    lv_demo_benchmark();
 
     while (!quit) {
         SDL_PumpEvents();
@@ -152,12 +153,10 @@ int main(int argc, char **argv) {
 
 
 static SDL_Window *create_gl_window() {
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-
 #if NANOVG_GLES2
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 #elif NANOVG_GL3
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -165,30 +164,17 @@ static SDL_Window *create_gl_window() {
 #error "No GL version epcified"
 #endif
 
+    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-    // Try with these GL attributes
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 8);
-
-    SDL_Window *window = SDL_CreateWindow("NanoVG Example", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 480,
-                                          SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN |
-                                          SDL_WINDOW_ALLOW_HIGHDPI);
-
-    if (!window) { // If it fails, try with more conservative options
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
-
-        window = SDL_CreateWindow("Example", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 480,
-                                  SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN |
-                                  SDL_WINDOW_ALLOW_HIGHDPI);
-
-        if (!window) { // We were not able to create the window
-            printf("ERROR: SDL_CreateWindow failed: %s", SDL_GetError());
-            window = NULL;
-        }
-    }
-    return window;
+    return SDL_CreateWindow("NanoVG Example", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 960, 540,
+                            SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
 }
 
 static NVGcontext *create_nvg() {
@@ -222,9 +208,6 @@ static void nvg_sdl_submit_buffer(lv_draw_nvg_context_t *context, lv_draw_nvg_bu
 
     int image = context->userdata->framebuffer_imgs[index];
     if (!image) return;
-
-    nvgScale(vg, 1, -1);
-    nvgTranslate(vg, 0, -winHeight);
 
     nvgBeginPath(vg);
     if (a) {
@@ -288,10 +271,11 @@ static void nvg_sdl_userdata_init(nvg_sdl_userdata *userdata, SDL_Window *window
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glBindTexture(GL_TEXTURE_2D, 0);
 #if NANOVG_GLES2
-        userdata->framebuffer_imgs[i] = nvglCreateImageFromHandleGLES2(nvg, textures[i], fbWidth, fbHeight, NVG_ANTIALIAS);
+        userdata->framebuffer_imgs[i] = nvglCreateImageFromHandleGLES2(nvg, textures[i], fbWidth, fbHeight,
+                                                                       NVG_IMAGE_FLIPY);
 #elif NANOVG_GL3
         userdata->framebuffer_imgs[i] = nvglCreateImageFromHandleGL3(nvg, textures[i], fbWidth, fbHeight,
-                                                                     NVG_ANTIALIAS);
+                                                                     NVG_IMAGE_FLIPY);
 #else
 #error "No GL version epcified"
 #endif
