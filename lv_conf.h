@@ -132,6 +132,8 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 /*Use NXP's VG-Lite GPU iMX RTxxx platforms*/
 #define LV_USE_GPU_NXP_VG_LITE   0
 
+#define LV_USE_EXTERNAL_RENDERER 1
+#define LV_USE_GPU_SDL           1
 #define LV_USE_DRAW_NANOVG           1
 
 /*-------------
@@ -475,7 +477,7 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 #if LV_USE_THEME_DEFAULT
 
 /*0: Light mode; 1: Dark mode*/
-# define LV_THEME_DEFAULT_DARK     1
+# define LV_THEME_DEFAULT_DARK     0
 
 /*1: Enable grow on press*/
 # define LV_THEME_DEFAULT_GROW              1

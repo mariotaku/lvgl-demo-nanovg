@@ -31,15 +31,11 @@ static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t 
     }
 
     // Set render target to window buffer
-    ctx->callbacks.set_render_buffer(ctx, LV_DRAW_NVG_BUFFER_SCREEN);
-//
-    nvgBeginFrame(ctx->nvg, lv_area_get_width(area), lv_area_get_height(area), 0);
-//    ctx->callbacks.submit_buffer(ctx, LV_DRAW_NVG_BUFFER_FRAME, NULL, true);
+    ctx->callbacks.set_render_buffer(ctx, LV_DRAW_NVG_BUFFER_SCREEN, false);
 
-    nvgBeginPath(ctx->nvg);
-    nvgRect(ctx->nvg, 0, 0, lv_area_get_width(area), lv_area_get_height(area));
+    nvgBeginFrame(ctx->nvg, lv_area_get_width(area), lv_area_get_height(area), 1);
+    ctx->callbacks.fill_buffer(ctx, LV_DRAW_NVG_BUFFER_FRAME, NULL, true);
 
-    nvgFillColor(ctx->nvg, nvgRGB(255, 255, 0));
     nvgEndFrame(ctx->nvg);
 
     // Swap window buffer

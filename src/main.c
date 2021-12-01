@@ -23,7 +23,9 @@
 #if NANOVG_GLES2
 #include <GLES2/gl2.h>
 #else
+
 #include <GL/glew.h>
+
 #endif
 
 #include <nanovg.h>
@@ -48,12 +50,14 @@ typedef struct lv_draw_nvg_context_userdata_t {
     int width, height;
 } nvg_sdl_userdata;
 
+#define LV_DRAW_NVG_BUFFER_BEGIN LV_DRAW_NVG_BUFFER_FRAME
+
 static int sdl_handle_event(void *userdata, SDL_Event *event);
 
-static void nvg_sdl_set_render_buffer(lv_draw_nvg_context_t *context, lv_draw_nvg_buffer_index index);
+static void nvg_sdl_set_render_buffer(lv_draw_nvg_context_t *context, lv_draw_nvg_buffer_index index, bool clear);
 
-static void nvg_sdl_submit_buffer(lv_draw_nvg_context_t *context, lv_draw_nvg_buffer_index index, const lv_area_t *a,
-                                  bool clear);
+static void
+nvg_sdl_submit_buffer(lv_draw_nvg_context_t *context, lv_draw_nvg_buffer_index index, const lv_area_t *a, bool clear);
 
 static void nvg_sdl_swap_window(lv_draw_nvg_context_t *context);
 
@@ -139,11 +143,11 @@ int main(int argc, char **argv) {
     SDL_memset(sdl_ctx.framebuffers, 0, sizeof(sdl_ctx.framebuffers));
     SDL_memset(textures, 0, sizeof(textures));
     SDL_memset(sdl_ctx.framebuffer_imgs, 0, sizeof(sdl_ctx.framebuffer_imgs));
-    glGenFramebuffers(LV_DRAW_NVG_BUFFER_COUNT - LV_DRAW_NVG_BUFFER_FRAME,
-                      &sdl_ctx.framebuffers[LV_DRAW_NVG_BUFFER_FRAME]);
-    glGenTextures(LV_DRAW_NVG_BUFFER_COUNT - LV_DRAW_NVG_BUFFER_FRAME, &textures[LV_DRAW_NVG_BUFFER_FRAME]);
+    glGenFramebuffers(LV_DRAW_NVG_BUFFER_COUNT - LV_DRAW_NVG_BUFFER_BEGIN,
+                      &sdl_ctx.framebuffers[LV_DRAW_NVG_BUFFER_BEGIN]);
+    glGenTextures(LV_DRAW_NVG_BUFFER_COUNT - LV_DRAW_NVG_BUFFER_BEGIN, &textures[LV_DRAW_NVG_BUFFER_BEGIN]);
 
-    for (int i = LV_DRAW_NVG_BUFFER_FRAME; i < LV_DRAW_NVG_BUFFER_COUNT; i++) {
+    for (int i = LV_DRAW_NVG_BUFFER_BEGIN; i < LV_DRAW_NVG_BUFFER_COUNT; i++) {
         glBindFramebuffer(GL_FRAMEBUFFER, sdl_ctx.framebuffers[i]);
         glBindTexture(GL_TEXTURE_2D, textures[i]);
 
@@ -166,7 +170,7 @@ int main(int argc, char **argv) {
 
     lv_draw_nvg_callbacks_t callbacks = {
             .set_render_buffer = nvg_sdl_set_render_buffer,
-            .submit_buffer = nvg_sdl_submit_buffer,
+            .fill_buffer = nvg_sdl_submit_buffer,
             .swap_window = nvg_sdl_swap_window
     };
     lv_draw_nvg_context_t driver_ctx;
@@ -193,8 +197,8 @@ int main(int argc, char **argv) {
 
     lv_indev_t *indev_pointer = lv_sdl_init_pointer();
 
-    lv_demo_widgets();
-//    lv_demo_music();
+//    lv_demo_widgets();
+    lv_demo_music();
 
     while (!quit) {
         SDL_PumpEvents();
@@ -210,9 +214,13 @@ int main(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-static void nvg_sdl_set_render_buffer(lv_draw_nvg_context_t *context, lv_draw_nvg_buffer_index index) {
+static void nvg_sdl_set_render_buffer(lv_draw_nvg_context_t *context, lv_draw_nvg_buffer_index index, bool clear) {
     glBindFramebuffer(GL_FRAMEBUFFER, context->userdata->framebuffers[index]);
     glViewport(0, 0, context->userdata->width, context->userdata->height);
+    if (clear) {
+        glClearColor(1, 1, 1, 0);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
 }
 
 static void nvg_sdl_submit_buffer(lv_draw_nvg_context_t *context, lv_draw_nvg_buffer_index index, const lv_area_t *a,
@@ -235,6 +243,9 @@ static void nvg_sdl_submit_buffer(lv_draw_nvg_context_t *context, lv_draw_nvg_bu
 //        nvgRestore(vg);
     }
 
+    int image = context->userdata->framebuffer_imgs[index];
+    if (!image) return;
+
     nvgScale(vg, 1, -1);
     nvgTranslate(vg, 0, -winHeight);
 
@@ -246,8 +257,9 @@ static void nvg_sdl_submit_buffer(lv_draw_nvg_context_t *context, lv_draw_nvg_bu
     }
 
     NVGpaint paint = nvgImagePattern(vg, 0, 0, winWidth, winHeight, 0,
-                                     context->userdata->framebuffer_imgs[index], 1.0f);
+                                     image, 1.0f);
     nvgFillPaint(vg, paint);
+    nvgFill(vg);
 }
 
 static void nvg_sdl_swap_window(lv_draw_nvg_context_t *context) {
